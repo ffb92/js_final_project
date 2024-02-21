@@ -11,6 +11,16 @@ In dieser function muss dann auch der ausgewählte fighter übergeben werden in 
 
 Attacken müssen geprüft werden, ob ein Fighter ausgewählt ist.- Check
 
-Gegen alle nacheinander Random kämpfen und den King of Iron Fist Tournament ausrufen
+Gegen alle nacheinander Random kämpfen und den King of Iron Fist Tournament ausrufen -Check
 
-Beim Gegner den ausgewählten Fighter rausnehmen. 
+Beim Gegner den ausgewählten Fighter rausnehmen. - CHeck
+
+Fighter Templates einbauen
+
+Keine Random Attacke mher sondern mit der Zahl auswählen - Check
+
+Better Comments integrieren
+
+Auswahl des Fighters Grafisch verbessern
+
+Potions und eventuell Stamina rausnehmen.

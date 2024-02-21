@@ -4,22 +4,24 @@ import { AttackSkill } from "./data/classes.js";
 import {
   fightMenuTemplate,
   mainMenuTemplate,
+  AttackMenuTemplate,
   introTemplate,
   vegetaTemplate,
   pikachuTemplate,
   madaraTemplate,
   soraTemplate,
   cloudTemplate,
+  winnerTemplate,
 } from "./data/templates.js";
 
 let chosenFighter = {};
 let opponentFighter = {};
 
 // Create fighters
-let vegeta = new Fighter("Vegeta", 100, 100, 10, [], 10);
-let pikachu = new Fighter("Pikachu", 100, 100, 10, [], 10);
-let madara = new Fighter("Madara", 100, 100, 10, [], 10);
-let sora = new Fighter("Sora", 100, 100, 10, [], 10);
+let vegeta = new Fighter("Vegeta", 100, 1000, 10, [], 10);
+let pikachu = new Fighter("Pikachu", 10, 100, 10, [], 10);
+let madara = new Fighter("Madara", 10, 100, 10, [], 10);
+let sora = new Fighter("Sora", 10, 100, 10, [], 10);
 let cloud = new Fighter("Cloud", 100, 100, 10, [], 10);
 
 // Create attack skills
@@ -83,6 +85,16 @@ cloud.learnAttackSkill(omnislash);
 cloud.learnAttackSkill(bladeBeam);
 cloud.learnAttackSkill(crossSlash);
 cloud.learnAttackSkill(braver);
+
+function atLeastOneOpponentAlive() {
+  return (
+    vegeta.isAlive() ||
+    pikachu.isAlive() ||
+    madara.isAlive() ||
+    sora.isAlive() ||
+    cloud.isAlive()
+  );
+}
 
 // --------------------------------------------- Select fighter ---------------------------------------------
 function selectFighter() {
@@ -166,48 +178,124 @@ function selectFighter() {
 }
 
 // --------------------------------------------- Select opponent ---------------------------------------------
-function selectOpponent() {
-  const opponents = [vegeta, pikachu, madara, sora, cloud];
-  const randomIndex = Math.floor(Math.random() * opponents.length);
-  return opponents[randomIndex];
+function selectOpponent(chosenFighter) {
+  const aliveOpponents = [];
+  if (vegeta.isAlive() && vegeta !== chosenFighter) aliveOpponents.push(vegeta);
+  if (pikachu.isAlive() && pikachu !== chosenFighter)
+    aliveOpponents.push(pikachu);
+  if (madara.isAlive() && madara !== chosenFighter) aliveOpponents.push(madara);
+  if (sora.isAlive() && sora !== chosenFighter) aliveOpponents.push(sora);
+  if (cloud.isAlive() && cloud !== chosenFighter) aliveOpponents.push(cloud);
+
+  if (aliveOpponents.length === 0) {
+    console.log(winnerTemplate);
+    process.exit(0);
+  }
+
+  const randomIndex = Math.floor(Math.random() * aliveOpponents.length);
+  return aliveOpponents[randomIndex];
+}
+
+// --------------------------------------------- Perform opponent attack ---------------------------------------------
+
+function performOpponentAttack() {
+  // Zufällige Auswahl eines Angriffs des Gegners
+  const randomIndex = Math.floor(Math.random() * opponentFighter.skills.length);
+  const randomAttack = opponentFighter.skills[randomIndex].attack;
+
+  // Gegner führt den zufällig gewählten Angriff aus
+  opponentFighter.attack(randomAttack, chosenFighter);
+
+  // Überprüfen, ob der Spielerkämpfer noch lebt
+  if (!chosenFighter.isAlive()) {
+    console.log(`${chosenFighter.name} has been defeated! Game over.`);
+    process.exit(0); // Das Spiel beenden
+  } else {
+    console.log(
+      `${chosenFighter.name} now has ${chosenFighter.health} health remaining.`
+    );
+  }
+}
+
+// --------------------------------------------- Perform attack ---------------------------------------------
+function performAttack() {
+  while (chosenFighter.isAlive() && opponentFighter.isAlive()) {
+    // Überprüfen, ob ein Spielerkämpfer und ein Gegner ausgewählt wurden
+    if (!chosenFighter.name || !opponentFighter.name) {
+      console.log("You need to select both a fighter and an opponent first!");
+      startBattle();
+      return;
+    }
+
+    // Menü für die Auswahl der Attacke anzeigen
+    const attackMenu = AttackMenuTemplate(chosenFighter);
+    const selectedOption = readlineSync.question(attackMenu);
+    if (selectedOption.toUpperCase() === "B") {
+      startBattle(); // Zurück zum Hauptmenü
+      return;
+    }
+
+    // Die ausgewählte Attacke aus dem Index extrahieren und den Angriff ausführen
+    const index = parseInt(selectedOption) - 1;
+    if (index >= 0 && index < chosenFighter.skills.length) {
+      const attack = chosenFighter.skills[index].attack;
+      chosenFighter.attack(attack, opponentFighter);
+
+      // Gegner überprüfen, ob er besiegt wurde
+      if (!opponentFighter.isAlive()) {
+        console.log(`${opponentFighter.name} has been defeated!`);
+        startBattle(); // Zurück zum Hauptmenü
+      } else {
+        console.log(
+          `${opponentFighter.name} now has ${opponentFighter.health} health remaining.`
+        );
+        // Gegner greift zurück an
+        performOpponentAttack();
+      }
+    } else {
+      console.log("Invalid option. Please select a valid attack.");
+      // Das Menü wird erneut angezeigt
+    }
+  }
+
+  // Überprüfen, wer den Kampf gewonnen hat
+  if (chosenFighter.isAlive()) {
+    console.log(`${opponentFighter.name} has been defeated!`);
+  } else {
+    console.log(`${chosenFighter.name} has been defeated!`);
+  }
+
+  startBattle(); // Zurück zum Hauptmenü
 }
 
 // --------------------------------------------- Start battle ---------------------------------------------
 function startBattle() {
-  const mainMenu = readlineSync.question(mainMenuTemplate);
-  console.log(mainMenu);
-  switch (mainMenu.toUpperCase()) {
-    case "S":
-      opponentFighter = selectOpponent();
-      console.log(`Random opponent selected: ${opponentFighter.name}`);
-      const fightMenu = readlineSync.question(fightMenuTemplate);
-      console.log(fightMenu);
-      switch (fightMenu.toUpperCase()) {
-        case "A":
-          // Überprüfen, ob ein Kämpfer ausgewählt wurde
-          if (chosenFighter.name) {
-            console.log("Attack");
-            console.log(chosenFighter.skills[0].attack);
-          } else {
-            console.log("You need to select a fighter first!");
-            startBattle();
-          }
-          break;
-        case "B":
-          startBattle();
-          break;
-      }
-      break;
-    case "F":
-      selectFighter();
-      break;
-    case "Q":
-      console.log("The Fight is over. Goodbye!");
-      break;
-    default:
-      console.log("Invalid input");
-      startBattle();
+  while (atLeastOneOpponentAlive()) {
+    const mainMenu = readlineSync.question(mainMenuTemplate);
+    console.log(mainMenu);
+    switch (mainMenu.toUpperCase()) {
+      case "S":
+        if (chosenFighter.name) {
+          opponentFighter = selectOpponent(chosenFighter);
+          console.log(`Random opponent selected: ${opponentFighter.name}`);
+          performAttack();
+        } else {
+          console.log("You need to select a fighter first!");
+        }
+        break;
+      case "F":
+        selectFighter();
+        break;
+      case "Q":
+        console.log("The Fight is over. Goodbye!");
+        process.exit(0);
+      default:
+        console.log("Invalid input");
+    }
   }
+
+  console.log("All opponents have been defeated! You win!");
+  process.exit(0);
 }
 
 // ------------------------------------------ Start the program ------------------------------------------
