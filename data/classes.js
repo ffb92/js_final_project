@@ -5,7 +5,6 @@ export class Fighter {
     this.stamina = stamina;
     this.staminaGain = staminaGain;
     this.skills = skills;
-    this.counter = counter;
   }
   learnAttackSkill(newskill) {
     this.skills.push(newskill);
