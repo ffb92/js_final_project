@@ -247,10 +247,11 @@ function selectOpponent(chosenFighter) {
   if (aliveOpponents.length === 0) {
     clearC();
     console.log(winnerTemplate);
+    // Damit das Spiel beendet wird, sonst entsteht eine Fehlermeldung.
     process.exit(0);
   }
   // Zufällige Auswahl eines lebenden Gegners, damit nicht immer der gleiche Gegner ausgewählt wird.
-  // Math.random gibt eine zufällige Zahl zwischen 0 und 1 zurück.
+  // Math.random gibt eine zufällige Zahl.
   // Math.floor rundet die Zahl ab.
   // aliveOpponents.length gibt die Anzahl der lebenden Gegner zurück.
   // Das Ergebnis wird in die Variable randomIndex gespeichert.
@@ -258,50 +259,82 @@ function selectOpponent(chosenFighter) {
   return aliveOpponents[randomIndex];
 }
 
+//? --------------------------------------------- Perform opponent attack ---------------------------------------------
+// Davor definieren, weil die function in performAttack verwendet wird.
+
+function performOpponentAttack() {
+  // Zufällige Attack des Gegners auswählen.
+  // Math.random wieder zufällige Zahl und floor rundet ab.
+  let randomIndex = Math.floor(Math.random() * opponentFighter.skills.length);
+  let randomAttack = opponentFighter.skills[randomIndex].attack;
+
+  // Gegner führt den zufällig gewählten Angriff aus.
+  opponentFighter.attack(randomAttack, chosenFighter);
+
+  // Überprüfen, ob der gewählte Kämpfer besiegt wurde und den Status anzeigen.
+  if (!chosenFighter.isAlive()) {
+    chosenFighter.showStatus();
+    // Ausgabe mit Template und dem Namen des Kämpfers.
+    console.log(loserTemplate);
+    console.log(`${chosenFighter.name} has been defeated! Game over.`);
+    // Das Spiel beenden.
+    process.exit(0);
+  } else {
+    // Ansonsten verbleibende Leben anzeigen.
+    console.log(
+      `${chosenFighter.name} now has ${chosenFighter.health} health remaining.`
+    );
+  }
+}
+
 //? --------------------------------------------- Perform attack ---------------------------------------------
 function performAttack() {
+  //
   while (chosenFighter.isAlive() && opponentFighter.isAlive()) {
-    // Überprüfen, ob ein Spielerkämpfer und ein Gegner ausgewählt wurden
+    // Überprüfen, ob kein Kämpfer und ein Gegner ausgewählt wurden, bevor man in das Kampfmenü gelangt.
     if (!chosenFighter.name || !opponentFighter.name) {
       clearC();
-      console.log("You need to select both a fighter and an opponent first!");
+      // Kämpfer nicht ausgewählt, zurück zum Hauptmenü.
       startBattle();
       return;
     }
-    // Menü für die Auswahl der Attacke anzeigen
-
-    let attackMenu = attackMenuTemplate(chosenFighter);
+    // Menü für die Auswahl der Attacke anzeigen.
+    const attackMenu = attackMenuTemplate(chosenFighter);
     let selectedOption = readlineSync.question(attackMenu);
+    // Zurück zum Hauptmenü.
     if (selectedOption.toUpperCase() === "B") {
-      startBattle(); // Zurück zum Hauptmenü
+      startBattle();
       return;
     }
-
     // Die ausgewählte Attacke aus dem Index extrahieren und den Angriff ausführen
+    //parseInt, um den Index/Eingabe in eine Nummer zu konvertieren.
+    // -1, weil die Eingabe bei 1 anfängt und der Index bei 0.
     let index = parseInt(selectedOption) - 1;
+    // Überprüfen, ob die Eingabe gültig ist und innerhalb der Arraylänge liegt.
     if (index >= 0 && index < chosenFighter.skills.length) {
+      // Gewählte Attacke ausführen.
       let attack = chosenFighter.skills[index].attack;
       chosenFighter.attack(attack, opponentFighter);
-
-      // Gegner überprüfen, ob er besiegt wurde
+      // Gegner überprüfen, ob er besiegt wurde und den Status anzeigen.
+      // Wenn der Gegner besiegt wurde, wird das Menü erneut angezeigt.
       if (!opponentFighter.isAlive()) {
         opponentFighter.showStatus();
         console.log(`${opponentFighter.name} has been defeated!`);
-        startBattle(); // Zurück zum Hauptmenü
+        startBattle();
       } else {
+        // Ansonsten verbleibende Leben anzeigen.
         console.log(
           `${opponentFighter.name} now has ${opponentFighter.health} health remaining.`
         );
-        // Gegner greift zurück an
+        // Gegner greift zurück an.
         performOpponentAttack();
       }
+      // Wenn die Eingabe nicht innerhalb des Index ist, wird das Menü erneut angezeigt.
     } else {
       clearC();
       console.log("Invalid option. Please select a valid attack.");
-      // Das Menü wird erneut angezeigt
     }
   }
-
   // Überprüfen, wer den Kampf gewonnen hat
   if (chosenFighter.isAlive()) {
     clearC();
@@ -310,43 +343,28 @@ function performAttack() {
     clearC();
     console.log(`${chosenFighter.name} has been defeated!`);
   }
-
-  startBattle(); // Zurück zum Hauptmenü
-}
-
-//? --------------------------------------------- Perform opponent attack ---------------------------------------------
-
-function performOpponentAttack() {
-  // Zufällige Auswahl eines Angriffs des Gegners
-  let randomIndex = Math.floor(Math.random() * opponentFighter.skills.length);
-  let randomAttack = opponentFighter.skills[randomIndex].attack;
-
-  // Gegner führt den zufällig gewählten Angriff aus
-  opponentFighter.attack(randomAttack, chosenFighter);
-
-  // Überprüfen, ob der Spielerkämpfer noch lebt
-  if (!chosenFighter.isAlive()) {
-    chosenFighter.showStatus();
-    console.log(loserTemplate);
-    console.log(`${chosenFighter.name} has been defeated! Game over.`);
-    process.exit(0); // Das Spiel beenden
-  } else {
-    console.log(
-      `${chosenFighter.name} now has ${chosenFighter.health} health remaining.`
-    );
-  }
+  startBattle();
 }
 
 //? ---------------------------- Main Battle function ----------------------------
 //? ---------------------------- Start Battle ----------------------------
+// Diese Funktion startet das Programm und führt das Hauptmenü aus.
+// Intro anzeigen zum Start.
 console.log(introTemplate);
 function startBattle() {
+  // while Loop, solange mindestens ein Gegner lebt, wird das Hauptmenü angezeigt.
   while (atLeastOneOpponentAlive()) {
-    let mainMenu = readlineSync.question(mainMenuTemplate);
+    // Hauptmenü anzeigen und Eingabe abfragen.
+    const mainMenu = readlineSync.question(mainMenuTemplate);
     clearC();
     console.log(mainMenu);
+    // Mit switch Eingabe prüfen und entsprechend ausführen.
     switch (mainMenu.toUpperCase()) {
       case "S":
+        // Überprüfen ob ein Kämpfer ausgewählt wurde.
+        // Wenn ja, wird der zufällige Gegner über die function definiert.
+        // Anschließend wird die performAttack function ausgeführt.
+        // Wenn nicht, dann Meldung ausgeben.
         if (chosenFighter.name) {
           opponentFighter = selectOpponent(chosenFighter);
           console.log(`Random opponent selected: ${opponentFighter.name}`);
@@ -357,18 +375,21 @@ function startBattle() {
         }
         break;
       case "F":
+        // Kämpferauswahl Menü anzeigen.
         selectFighter();
         break;
       case "Q":
         clearC();
+        // Quit Template anzeigen und das Programm beenden.
         console.log(quitTemplate);
         process.exit(0);
       default:
+        // Wenn die Eingabe ungültig ist, Meldung ausgeben.
         clearC();
         console.log("Invalid input");
     }
   }
-  process.exit(0);
+  return;
 }
 
 // ------------------------------------------ Start the program ------------------------------------------

@@ -33,16 +33,18 @@ export const mainMenuTemplate = `
 +-----------------------------------------------+`;
 
 export function attackMenuTemplate(fighter) {
-  let attackMenu = `
+  const attackMenu = `
   +-----------------------------------------------+
   |                                               |
   |                                               |
   |                                               |`;
-
+// Foreach loop um für jeden Attack ein Menüpunkt zu erstellen.
   fighter.skills.forEach((attack, index) => {
+    // Hier wird die Attacke und der Schaden in das Menü eingefügt.
     attackMenu += `
   |  ${colors.fg.yellow}[${index + 1}]${colors.reset} ${attack.attack} (${
       attack.damage
+      //Hier wird die Länge des Strings berechnet und die Leerzeichen angepasst.
     } damage)${" ".repeat(
       36 - attack.attack.length - attack.damage.toString().length - 5
     )}|`;
